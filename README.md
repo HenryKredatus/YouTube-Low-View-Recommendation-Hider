@@ -19,3 +19,8 @@ YouTube tends to force such recommendations into people's feeds, especially near
 3. Paste in all the code from the included JS file
 4. Do file, then save or just ctrl+s on the script and it will automatically be active on all new YouTube windows you open
 5. Adjust the integer for the VIEW_THRESHOLD variable on line 20 to change the minimum number of views you want your recommendations to have (1,000+ by default)
+
+6. Install Tampermonkey from https://www.tampermonkey.net/
+7. Click this link: [youtube-hide-low-views.user.js](https://raw.githubusercontent.com/HenryKredatus/YouTube-Low-View-Recommendation-Hider/main/youtube-hide-low-views.user.js) — Tampermonkey will pop up an install prompt.
+8. Click Install.
+9. Adjust `VIEW_THRESHOLD` on line 20 if you want a different minimum view count (1,000 by default).
