@@ -1,13 +1,16 @@
 // ==UserScript==
 // @name         YouTube - Hide Low-View Recommendations
-// @namespace    https://github.com/your-username/youtube-hide-low-views
+// @namespace    https://github.com/HenryKredatus/YouTube-Low-View-Recommendation-Hider
 // @version      1.4
 // @description  Automatically hides YouTube recommended videos with under 1,000 views and collapses the space so other recs shift up.
-// @author       you
+// @author       HenryKredatus
 // @match        *://www.youtube.com/*
 // @match        *://m.youtube.com/*
 // @run-at       document-idle
 // @grant        none
+// @supportURL   https://github.com/HenryKredatus/YouTube-Low-View-Recommendation-Hider/issues
+// @updateURL    https://raw.githubusercontent.com/HenryKredatus/YouTube-Low-View-Recommendation-Hider/main/youtube-hide-low-views.user.js
+// @downloadURL  https://raw.githubusercontent.com/HenryKredatus/YouTube-Low-View-Recommendation-Hider/main/youtube-hide-low-views.user.js
 // ==/UserScript==
 
 (function () {
