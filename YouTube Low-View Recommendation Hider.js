@@ -9,8 +9,8 @@
 // @run-at       document-idle
 // @grant        none
 // @supportURL   https://github.com/HenryKredatus/YouTube-Low-View-Recommendation-Hider/issues
-// @updateURL    https://raw.githubusercontent.com/HenryKredatus/YouTube-Low-View-Recommendation-Hider/main/youtube-hide-low-views.user.js
-// @downloadURL  https://raw.githubusercontent.com/HenryKredatus/YouTube-Low-View-Recommendation-Hider/main/youtube-hide-low-views.user.js
+// @updateURL    https://raw.githubusercontent.com/HenryKredatus/YouTube-Low-View-Recommendation-Hider/main/YouTube%20Low-View%20Recommendation%20Hider.user.js
+// @downloadURL  https://raw.githubusercontent.com/HenryKredatus/YouTube-Low-View-Recommendation-Hider/main/YouTube%20Low-View%20Recommendation%20Hider.user.js
 // ==/UserScript==
 
 (function () {
