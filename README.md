@@ -14,7 +14,7 @@ YouTube tends to force such recommendations into people's feeds, especially near
 
 ## Installation
 
-1. Install Tampermonkey from https://www.tampermonkey.net/
+1. Install Tampermonkey from https://www.tampermonkey.net/ (On Chromium browsers like Google Chrome or Microsoft Edge, you will probably need to manually go into the extension's settings and set "site access" to "on all sites," along with changing "allow user scripts" to ON for any installed scripts like this to do anything)
 2. Click this link: [YouTube Low-View Recommendation Hider.user.js](https://raw.githubusercontent.com/HenryKredatus/YouTube-Low-View-Recommendation-Hider/main/YouTube%20Low-View%20Recommendation%20Hider.user.js) -Tampermonkey will pop up an install prompt.
 3. Click Install.
 4. Adjust `VIEW_THRESHOLD` on line 20 if you want a different minimum view count (1,000 by default).
@@ -40,4 +40,4 @@ Set `VERBOSE = false` for a quieter console. A one-line "loaded" banner and a pe
 
 ## NOTE
 
-This may occasionally hide videos you actually want to find as well in places like searches or channel pages if their view count is below your set threshold (although if you're downloading this, I reckon you rarely watch low-view videos to begin with). To see or check for such vids, temporarily turn off the script in the Tampermonkey extension. You can reactivate it from there as well, and it will resume functioning after you close and reopen the browser.
+This may occasionally hide videos you actually want to find as well in places like searches or channel pages if their view count is below your set threshold (although if you're downloading this, I reckon you rarely watch low-view videos to begin with). To see or check for such vids, temporarily turn off the script in the Tampermonkey extension. You can reactivate it from there as well, and it will resume functioning after you close and reopen the browser. You may need to do this following me updating and republishing it as well, so try that if you notice low-view vids popping up anywhere even with it activated.
