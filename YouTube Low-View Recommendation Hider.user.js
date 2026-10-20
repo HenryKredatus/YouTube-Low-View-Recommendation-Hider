@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         YouTube - Hide Low-View Recommendations
 // @namespace    https://github.com/HenryKredatus/YouTube-Low-View-Recommendation-Hider
-// @version      1.5
-// @description  Automatically hides YouTube recommended videos with under 1,000 views (including end-screen "up next" overlay tiles) and collapses the space so other recs shift up.
+// @version      1.6
+// @description  Automatically hides YouTube recommended videos with under 1,000 views (including end-screen "up next" overlay tiles, both classic and modern formats) and collapses the space so other recs shift up.
 // @author       HenryKredatus
 // @match        *://www.youtube.com/*
 // @match        *://m.youtube.com/*
@@ -24,7 +24,7 @@
   // This ALWAYS prints, regardless of any debug flag, so you can confirm
   // this exact script version is actually the one running.
   console.log(
-    "%c[hide-low-views] v1.5 loaded on " + location.href,
+    "%c[hide-low-views] v1.6 loaded on " + location.href,
     "color: #0a0; font-weight: bold;",
   );
 
@@ -131,7 +131,12 @@
       if (count === null) continue;
       matchesThisPass++;
 
-      const card = findCardAncestor(el);
+      // Classic-format videowall tiles combine channel name + view count
+      // into one span (e.g. "Some Channel • 109 views") sitting inside a
+      // plain <a class="ytp-videowall-still ...">, which findCardAncestor
+      // can't see since it only looks for YTD-* custom elements. Fall back
+      // to the videowall-tile finder in that case.
+      const card = findCardAncestor(el) || findVideowallCardAncestor(el);
       if (!card) continue;
 
       if (card.dataset.ytLowViewChecked === "1") continue;
