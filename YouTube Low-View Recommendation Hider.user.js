@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         YouTube - Hide Low-View Recommendations
 // @namespace    https://github.com/HenryKredatus/YouTube-Low-View-Recommendation-Hider
-// @version      1.4
-// @description  Automatically hides YouTube recommended videos with under 1,000 views and collapses the space so other recs shift up.
+// @version      1.5
+// @description  Automatically hides YouTube recommended videos with under 1,000 views (including end-screen "up next" overlay tiles) and collapses the space so other recs shift up.
 // @author       HenryKredatus
 // @match        *://www.youtube.com/*
 // @match        *://m.youtube.com/*
@@ -17,14 +17,14 @@
   "use strict";
 
   // ---- Config ----------------------------------------------------------
-  const VIEW_THRESHOLD = 1000; // ADJUST TO ALTER VIEW THRESHOLD (1,000 by Default)
+  const VIEW_THRESHOLD = 1000;
   const DEBOUNCE_MS = 250;
   const VERBOSE = true; // logs every hidden video individually
 
   // This ALWAYS prints, regardless of any debug flag, so you can confirm
   // this exact script version is actually the one running.
   console.log(
-    "%c[hide-low-views] v1.4 loaded on " + location.href,
+    "%c[hide-low-views] v1.5 loaded on " + location.href,
     "color: #0a0; font-weight: bold;",
   );
 
@@ -67,6 +67,39 @@
     if (aria && /views?\.?$/i.test(aria.trim())) return aria.trim();
     const text = el.textContent;
     if (text && /views?\.?$/i.test(text.trim())) return text.trim();
+    return null;
+  }
+
+  // The end-screen "videowall" overlay (suggestion tiles shown when a video
+  // is paused or ends) formats its view count differently: a bare number
+  // like "9 • 11h ago" with no "views" word at all, so it needs its own
+  // parser and its own way of finding the enclosing tile to hide.
+  function parseVideowallCount(rawText) {
+    const text = rawText.trim();
+    const m = text.match(/^([\d,]+(?:\.\d+)?)\s*([KMB])?\s*[•·]/i);
+    if (!m) return null;
+    let num = parseFloat(m[1].replace(/,/g, ""));
+    if (Number.isNaN(num)) return null;
+    const suffix = m[2] ? m[2].toUpperCase() : "";
+    if (suffix === "K") num *= 1e3;
+    else if (suffix === "M") num *= 1e6;
+    else if (suffix === "B") num *= 1e9;
+    return num;
+  }
+
+  function findVideowallCardAncestor(el) {
+    let node = el;
+    while (node && node !== document.documentElement) {
+      if (
+        node.tagName === "A" &&
+        node.classList &&
+        (node.classList.contains("ytp-videowall-still") ||
+          node.classList.contains("ytp-modern-videowall-still"))
+      ) {
+        return node;
+      }
+      node = node.parentElement;
+    }
     return null;
   }
 
@@ -114,6 +147,37 @@
             candidate,
             "| card:",
             card.tagName,
+            card,
+          );
+        }
+      }
+    }
+
+    // Second pass: end-screen videowall overlay tiles (different markup,
+    // different view-count format — see parseVideowallCount above).
+    const videowallNodes = document.querySelectorAll(
+      '[class*="view-count-and-date-info"]',
+    );
+    for (const el of videowallNodes) {
+      const count = parseVideowallCount(el.textContent);
+      if (count === null) continue;
+      matchesThisPass++;
+
+      const card = findVideowallCardAncestor(el);
+      if (!card) continue;
+
+      if (card.dataset.ytLowViewChecked === "1") continue;
+      card.dataset.ytLowViewChecked = "1";
+
+      if (count < VIEW_THRESHOLD) {
+        card.style.setProperty("display", "none", "important");
+        hiddenThisPass++;
+        totalHiddenEver++;
+        if (VERBOSE) {
+          console.log(
+            "[hide-low-views] HID (videowall):",
+            el.textContent.trim(),
+            "| card:",
             card,
           );
         }

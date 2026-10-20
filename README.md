@@ -21,12 +21,12 @@ YouTube tends to force such recommendations into people's feeds, especially near
 
 ## How it works
 
-YouTube renders recommendation view counts in a few different formats depending on where they appear (sidebar vs. homepage grid) and often puts the actual count only in an `aria-label` attribute rather than the visible text. The script:
+YouTube renders recommendation view counts in a few different formats depending on where they appear, and often puts the actual count only in an `aria-label` attribute rather than the visible text. The script runs two detection passes:
 
-1. Scans the page for elements whose visible text or `aria-label` matches a view-count pattern (`"250 views"`, `"1.2K views"`, etc.).
-2. Walks up the DOM to find the enclosing recommendation "card" element.
-3. If the view count is under the threshold, sets `display: none` on the whole card-removing it from layout entirely so surrounding videos reflow to fill the gap.
-4. Uses a `MutationObserver` plus YouTube's internal `yt-navigate-finish` event to keep working as you scroll and navigate between videos without a full page reload (YouTube is a single-page app).
+1. **Sidebar / homepage grid recommendations** — scans for elements whose visible text or `aria-label` matches a view-count pattern (`"250 views"`, `"1.2K views"`, etc.).
+2. **End-screen "up next" overlay tiles** — the suggestion tiles YouTube shows when a video is paused or ends use a different format with no "views" word at all (e.g. `"9 • 11h ago"`), so these get matched separately.
+
+For both, it then walks up the DOM to find the enclosing recommendation "card" or tile, and if the view count is under the threshold, sets `display: none` on the whole thing — removing it from layout entirely so surrounding videos reflow to fill the gap. A `MutationObserver` plus YouTube's internal `yt-navigate-finish` event keep it working as you scroll and navigate between videos without a full page reload (YouTube is a single-page app).
 
 ## Debugging
 
