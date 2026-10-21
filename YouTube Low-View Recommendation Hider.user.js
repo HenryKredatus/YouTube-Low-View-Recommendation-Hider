@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube - Hide Low-View Recommendations
 // @namespace    https://github.com/HenryKredatus/YouTube-Low-View-Recommendation-Hider
-// @version      1.6
+// @version      1.7
 // @description  Automatically hides YouTube recommended videos with under 1,000 views (including end-screen "up next" overlay tiles, both classic and modern formats) and collapses the space so other recs shift up.
 // @author       HenryKredatus
 // @match        *://www.youtube.com/*
@@ -24,7 +24,7 @@
   // This ALWAYS prints, regardless of any debug flag, so you can confirm
   // this exact script version is actually the one running.
   console.log(
-    "%c[hide-low-views] v1.6 loaded on " + location.href,
+    "%c[hide-low-views] v1.7 loaded on " + location.href,
     "color: #0a0; font-weight: bold;",
   );
 
@@ -87,22 +87,6 @@
     return num;
   }
 
-  function findVideowallCardAncestor(el) {
-    let node = el;
-    while (node && node !== document.documentElement) {
-      if (
-        node.tagName === "A" &&
-        node.classList &&
-        (node.classList.contains("ytp-videowall-still") ||
-          node.classList.contains("ytp-modern-videowall-still"))
-      ) {
-        return node;
-      }
-      node = node.parentElement;
-    }
-    return null;
-  }
-
   function findCardAncestor(el) {
     let node = el;
     let card = null;
@@ -118,6 +102,52 @@
 
   let totalHiddenEver = 0;
 
+  // End-screen videowall tiles come in two formats:
+  //  - modern: a dedicated "9 • 11h ago" field (no "views" word)
+  //  - classic: "Some Channel • 109 views" in the author field
+  // YouTube repositions these tiles and can rewrite their inline styles,
+  // which would silently undo a display:none we set earlier. So instead of
+  // a one-time "already checked" flag, this always reasserts the hide. It is
+  // cheap (about a dozen tiles) and also runs on a short timer, because
+  // style rewrites don't trigger the childList MutationObserver.
+  function enforceVideowallTiles() {
+    let matches = 0;
+    let hidden = 0;
+    const tiles = document.querySelectorAll(
+      "a.ytp-videowall-still, a.ytp-modern-videowall-still",
+    );
+    for (const tile of tiles) {
+      let count = null;
+      let shown = "";
+
+      const modern = tile.querySelector('[class*="view-count-and-date-info"]');
+      if (modern) {
+        shown = modern.textContent.trim();
+        count = parseVideowallCount(shown);
+      } else {
+        const author = tile.querySelector('[class*="still-info-author"]');
+        if (author) {
+          shown = author.textContent.trim();
+          if (/views?\.?$/i.test(shown)) count = parseViewCount(shown);
+        }
+      }
+      if (count === null) continue;
+      matches++;
+
+      if (count < VIEW_THRESHOLD) {
+        const alreadyHidden = tile.style.getPropertyValue("display") === "none";
+        tile.style.setProperty("display", "none", "important");
+        if (!alreadyHidden) {
+          hidden++;
+          totalHiddenEver++;
+          if (VERBOSE)
+            console.log("[hide-low-views] HID (videowall):", shown, "|", tile);
+        }
+      }
+    }
+    return { matches, hidden };
+  }
+
   function scan() {
     let hiddenThisPass = 0;
     let matchesThisPass = 0;
@@ -131,63 +161,36 @@
       if (count === null) continue;
       matchesThisPass++;
 
-      // Classic-format videowall tiles combine channel name + view count
-      // into one span (e.g. "Some Channel • 109 views") sitting inside a
-      // plain <a class="ytp-videowall-still ...">, which findCardAncestor
-      // can't see since it only looks for YTD-* custom elements. Fall back
-      // to the videowall-tile finder in that case.
-      const card = findCardAncestor(el) || findVideowallCardAncestor(el);
-      if (!card) continue;
+      const tagCard = findCardAncestor(el);
+      if (tagCard) {
+        // Sidebar / grid cards are static once rendered, so a one-time
+        // "already checked" flag is safe and avoids reprocessing them on
+        // every mutation.
+        if (tagCard.dataset.ytLowViewChecked === "1") continue;
+        tagCard.dataset.ytLowViewChecked = "1";
 
-      if (card.dataset.ytLowViewChecked === "1") continue;
-      card.dataset.ytLowViewChecked = "1";
-
-      if (count < VIEW_THRESHOLD) {
-        card.style.setProperty("display", "none", "important");
-        hiddenThisPass++;
-        totalHiddenEver++;
-        if (VERBOSE) {
-          console.log(
-            "[hide-low-views] HID:",
-            candidate,
-            "| card:",
-            card.tagName,
-            card,
-          );
+        if (count < VIEW_THRESHOLD) {
+          tagCard.style.setProperty("display", "none", "important");
+          hiddenThisPass++;
+          totalHiddenEver++;
+          if (VERBOSE) {
+            console.log(
+              "[hide-low-views] HID:",
+              candidate,
+              "| card:",
+              tagCard.tagName,
+              tagCard,
+            );
+          }
         }
+        continue;
       }
     }
 
-    // Second pass: end-screen videowall overlay tiles (different markup,
-    // different view-count format — see parseVideowallCount above).
-    const videowallNodes = document.querySelectorAll(
-      '[class*="view-count-and-date-info"]',
-    );
-    for (const el of videowallNodes) {
-      const count = parseVideowallCount(el.textContent);
-      if (count === null) continue;
-      matchesThisPass++;
-
-      const card = findVideowallCardAncestor(el);
-      if (!card) continue;
-
-      if (card.dataset.ytLowViewChecked === "1") continue;
-      card.dataset.ytLowViewChecked = "1";
-
-      if (count < VIEW_THRESHOLD) {
-        card.style.setProperty("display", "none", "important");
-        hiddenThisPass++;
-        totalHiddenEver++;
-        if (VERBOSE) {
-          console.log(
-            "[hide-low-views] HID (videowall):",
-            el.textContent.trim(),
-            "| card:",
-            card,
-          );
-        }
-      }
-    }
+    // Second pass: end-screen videowall overlay tiles.
+    const vw = enforceVideowallTiles();
+    matchesThisPass += vw.matches;
+    hiddenThisPass += vw.hidden;
 
     console.log(
       `[hide-low-views] scan complete — ${matchesThisPass} view-count(s) seen this pass, ${hiddenThisPass} newly hidden, ${totalHiddenEver} hidden total so far.`,
@@ -221,6 +224,15 @@
     setTimeout(scan, 500);
     setTimeout(scan, 1500);
   });
+
+  // Reassert videowall hides even when no DOM nodes were added or removed.
+  setInterval(() => {
+    try {
+      enforceVideowallTiles();
+    } catch (e) {
+      console.error("[hide-low-views] videowall enforce error:", e);
+    }
+  }, 1000);
 
   // Manual trigger for testing: run window.__hideLowViewsScan() in console
   window.__hideLowViewsScan = scan;

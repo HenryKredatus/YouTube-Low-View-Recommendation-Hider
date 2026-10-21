@@ -15,7 +15,7 @@ YouTube tends to force such recommendations into people's feeds, especially near
 ## Installation
 
 1. Install Tampermonkey from https://www.tampermonkey.net/ (On Chromium browsers like Google Chrome or Microsoft Edge, you will probably need to manually go into the extension's settings and set "site access" to "on all sites," along with changing "allow user scripts" to ON for any installed scripts like this to do anything)
-2. Click this link: [YouTube Low-View Recommendation Hider.user.js](https://raw.githubusercontent.com/HenryKredatus/YouTube-Low-View-Recommendation-Hider/main/YouTube%20Low-View%20Recommendation%20Hider.user.js) -Tampermonkey will pop up an install prompt.
+2. Click this link: [YouTube Low-View Recommendation Hider.user.js](https://raw.githubusercontent.com/HenryKredatus/YouTube-Low-View-Recommendation-Hider/main/YouTube%20Low-View%20Recommendation%20Hider.user.js) — Tampermonkey will pop up an install prompt.
 3. Click Install.
 4. Adjust `VIEW_THRESHOLD` on line 20 if you want a different minimum view count (1,000 by default).
 
@@ -23,14 +23,16 @@ YouTube tends to force such recommendations into people's feeds, especially near
 
 YouTube renders recommendation view counts in a few different formats depending on where they appear, and often puts the actual count only in an `aria-label` attribute rather than the visible text. The script runs two detection passes:
 
-1. **Sidebar / homepage grid recommendations** — scans for elements whose visible text or `aria-label` matches a view-count pattern (`"250 views"`, `"1.2K views"`, etc.).
+1. **Sidebar / homepage grid recommendations** — scans for elements whose visible text or `aria-label` matches a view-count pattern (`"250 views"`, `"1 view"`, `"1.2K views"`, etc.).
 2. **End-screen "up next" overlay tiles** — the suggestion tiles YouTube shows when a video is paused or ends. These come in two different formats: a "modern" style with a dedicated bare-number field (e.g. `"9 • 11h ago"`, no "views" word), and a "classic" style that combines the channel name and view count into one string (e.g. `"Some Channel • 109 views"`). Both are matched and resolved to the same enclosing tile.
 
-For both passes, the script walks up the DOM to find the enclosing recommendation "card" or tile, and if the view count is under the threshold, sets `display: none` on the whole thing — removing it from layout entirely so surrounding videos reflow to fill the gap. A `MutationObserver` plus YouTube's internal `yt-navigate-finish` event keep it working as you scroll and navigate between videos without a full page reload (YouTube is a single-page app).
+For both passes, the script finds the enclosing recommendation "card" or tile, and if the view count is under the threshold, sets `display: none` on the whole thing — removing it from layout entirely so surrounding videos reflow to fill the gap. A `MutationObserver` plus YouTube's internal `yt-navigate-finish` event keep it working as you scroll and navigate between videos without a full page reload (YouTube is a single-page app).
+
+End-screen tiles get repositioned by YouTube's own code as you interact with the player, which can undo a hide. Because of that, the script re-checks those tiles every second and re-hides any low-view tile that has reappeared.
 
 ## Debugging
 
-Two flags near the top of the script control console output:
+One flag near the top of the script controls console output:
 
 ```js
 const VERBOSE = true; // logs every hidden video individually
